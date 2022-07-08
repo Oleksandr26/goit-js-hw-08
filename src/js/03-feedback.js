@@ -25,7 +25,8 @@ const handleSubmit = (event) => {
         userData[name] = value
     });
 
-    console.log('email:', email.value, 'message:', message.value);
+    console.log('email:', email.value);
+    console.log('message:', message.value);
     
     event.currentTarget.reset();
     localStore.remove(STORAGE_KEY)
