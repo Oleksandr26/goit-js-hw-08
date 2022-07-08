@@ -1,46 +1,57 @@
 import throttle from 'lodash.throttle';
-import LS from './storage'
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import localStore from './storage'
 
 const formRef = document.querySelector('.feedback-form')
+const STORAGE_KEY = 'feedback-form-state'
 
 initForm()
 
-const handleSabmit = event => {
+const handleSubmit = (event) => {
     event.preventDefault();
     const { email, message } = event.target.elements;
-    const userData = {
-        email: email.value,
-        message: message.value,
+    
+    if (email.value === '' || message.value === '') {
+        Notify.failure('Please fill up all fields');
+        return
+    } else {
+        Notify.success('Thanks for your feedback');
     }
-    event.currentTarget.rest();
-    localStorage.removeItem('feedback-form-state')
+    
+    const userData = {}
+
+    const formData = new FormData(formRef);
+    formData.forEach((name, value) => {
+        userData[name] = value
+    });
+
+    console.log('email:', email.value, 'message:', message.value);
+    
+    event.currentTarget.reset();
+    localStore.remove(STORAGE_KEY)
 }
 
 const handleInput = (event) => {
-    let persistedData = localStorage.getItem('feedback-form-state')
-    if (persistedData) {
-        persistedData = JSON.parse(persistedData)
-    } else {
+    const { name, value } = event.target;
+    
+    let persistedData = localStore.load(STORAGE_KEY);
+    if (!persistedData) {
         persistedData = {}
-    }
+    } 
 
-    persistedData[ email] = value
-    const userData = {}
-    const { name, value } = event.target
-    userData[name] = value
-    localStorage.setItem('feedback-form-state', JSON.stringify(userData))
+    persistedData[name] = value;
+    
+    localStore.save(STORAGE_KEY, persistedData)
 }
 
-formRef.addEventListener('submit', handleSabmit)
-formRef.addEventListener('input', throttle(handleInput, 1000))
+formRef.addEventListener('submit', handleSubmit)
+formRef.addEventListener('input', throttle(handleInput, 500))
 
 function initForm() {
-    let persistedData = localStorage.getItem('feedback-form-state')
+    let persistedData = localStore.load(STORAGE_KEY)
     if (persistedData) {
-        persistedData = JSON.parse(persistedData)
-
-        Object.entries(persistedData).forEach(([email, value]) => {
-            formRef.elements[email].value = value;
+        Object.entries(persistedData).forEach(([name, value]) => {
+            formRef.elements[name].value = value;
         });
     }
 }
